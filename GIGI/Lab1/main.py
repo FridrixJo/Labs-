@@ -36,4 +36,7 @@ operation = input("input data .. ")
 
 print(make_operation(13, 4, operation))
 
+x = [i for i in range(100) if i % 2 == 0]
+print(x)
 
+print('hola!!!')
