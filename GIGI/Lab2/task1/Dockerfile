@@ -17,6 +17,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 RUN apt-get update \
+    && apt update -y && apt install -y nano \
     && apt-get install -y netcat
 
 COPY --from=build /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
