@@ -7,12 +7,10 @@ class Parser:
 
     def count_sentences(self):
         sentences = re.findall(exp_sentences, self.text)
-        print(sentences)
         return len(sentences)
 
     def count_non_declarative_sentences(self):
         sentences = re.findall(exp_non_dec_sentences, self.text)
-        print(sentences)
         return len(sentences)
 
     def count_words(self):
@@ -37,13 +35,12 @@ class Parser:
             return count/len(words)
         except ZeroDivisionError:
             print('Division by zero')
+            return None
 
-    def top_K_related_N_grams(self, k: int, n: int):
+    def top_K_related_N_grams(self, k: int = 0, n: int = 0):
         exp = r'\W+'
-        text = re.sub(r'\W+', ' ', self.text)
+        text = re.sub(exp, ' ', self.text)
         words = text.split()
-
-        print(words)
 
         ngrams = []
 
@@ -59,7 +56,9 @@ class Parser:
             else:
                 counts[ngram] = 1
 
-        return counts
+        sorted_ngrams = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+
+        return sorted_ngrams[0:k]
 
 
 
