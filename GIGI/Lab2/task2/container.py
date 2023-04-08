@@ -67,12 +67,15 @@ class Container:
 
     def load(self):
         with open('container.txt', 'r') as file:
+            temp_dict = {}
             for line in file:
                 data_arr = line.replace('\n', "").split(' ')
                 self.users.add(data_arr[0])
                 self.current_user = data_arr[0]
                 self.storage[data_arr[0]] = set(data_arr[1:])
+                temp_dict[data_arr[0]] = set(data_arr[1:])
 
+            return temp_dict
 
     def switch(self, new_user: str = None):
         if new_user:

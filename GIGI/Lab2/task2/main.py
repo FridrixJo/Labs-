@@ -1,38 +1,5 @@
-import random
-
 print('hola')
 from container import Container
-#
-# a = Container()
-# a.load()
-# a.list()
-# a.add(1, 45, 5, 1, 45)
-# a.list()
-# a.switch('ilya')
-# a.list()
-# a.save()
-# a.load()
-
-# a = Container()
-# a.load()
-# print(a.current_user)
-# a.switch()
-# print(a.current_user)
-# a.add(54, 'fdihjfi')
-# a.list()
-# a.find(54, 22)
-# a.remove('andrew')
-# a.list()
-# a.save()
-a = random.choice(list(set()))
-print(a)
-
-# a = set()
-# a.add('hola')
-# a.add('slaa')
-# for i in a:
-#     print(i)
-
 
 def main_menu():
     print('0 - exit')
@@ -51,6 +18,8 @@ def main():
         username = input('Enter username: ')
 
     container = Container(username)
+
+    main_menu()
 
     while True:
         n = 0
@@ -73,7 +42,20 @@ def main():
         elif n == 4:
             container.list()
         elif n == 5:
+            regex = str(input("enter a regular exp"))
+            print(container.grep(regex))
+        elif n == 6:
+            container.save()
+        elif n == 7:
+            temp_dict = container.load()
+            print(temp_dict)
+        elif n == 8:
+            user = str(input('enter new user'))
+            container.switch(user)
+        else:
+            print('wrong input')
 
 
-
+if __name__ == "__main__":
+    main()
 
