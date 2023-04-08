@@ -29,12 +29,13 @@ def main():
             pass
 
         if n == 0:
+            print('thanks for using')
             break
         elif n == 1:
             data = (input("enter data to add: ")).split(" ")
             container.add(*data)
         elif n == 2:
-            key = str(input("enter key to delete"))
+            key = str(input("enter key to delete: "))
             container.remove(key)
         elif n == 3:
             data = (input("enter data to add: ")).split(" ")
@@ -42,16 +43,18 @@ def main():
         elif n == 4:
             container.list()
         elif n == 5:
-            regex = str(input("enter a regular exp"))
+            regex = str(input("enter a regular exp: "))
             print(container.grep(regex))
         elif n == 6:
             container.save()
+            print('data was saved')
         elif n == 7:
             temp_dict = container.load()
             print(temp_dict)
         elif n == 8:
-            user = str(input('enter new user'))
+            user = str(input('enter new user: '))
             container.switch(user)
+            print(f'current user: {container.current_user}')
         else:
             print('wrong input')
 
