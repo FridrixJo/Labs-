@@ -1,6 +1,8 @@
 import random
 import re
 
+
+
 class Container:
 
     def __init__(self, user: str = 'pavel'):
@@ -9,55 +11,31 @@ class Container:
         self.storage: dict[str, set] = {user: set()}
 
     def add(self, *keys):
-        if self.current_user:
-            try:
-                for key in keys:
-                    self.storage[self.current_user].add(key)
-            except Exception:
-                print('wrong keys')
-        else:
-            print('add user')
+        for key in keys:
+            self.storage[self.current_user].add(key)
+            self.storage[self.current_user].discard('')
 
     def remove(self, key):
-        try:
-            if self.storage[key]:
-                del self.storage[key]
-                self.users.discard(key)
-                if key == self.current_user:
-                    if len(self.users):
-                        self.current_user = random.choice(list(self.users))
-                    else:
-                        self.current_user = None
-        except Exception:
-            print('wrong key')
+        if key in self.storage[self.current_user]:
+            self.storage[self.current_user].discard(key)
+        else:
+            raise KeyError('there is no suck key')
 
     def list(self):
         for key, value in self.storage.items():
             print(key, ':', value)
 
     def find(self, *keys):
-        if self.current_user:
-            try:
-                for key in keys:
-                    if self.storage[self.current_user].intersection({key,}):
-                        print(f'key: {key} exists')
-                    else:
-                        print(f'key: {key} does not exist')
-            except Exception:
-                print('wrong keys')
-        else:
-            print('add user')
+        for key in keys:
+            if self.storage[self.current_user].intersection({key,}):
+                print(f'key: {key} exists')
+            else:
+                print(f'key: {key} does not exist')
 
     def grep(self, regex):
-        if self.current_user:
-            status = False
-            for i in self.storage[self.current_user]:
-                if re.search(regex, i):
-                    print(i)
-            if status is False:
-                print('Not found')
-        else:
-            print('add user')
+        for i in self.storage[self.current_user]:
+            if re.search(regex, i):
+                print(i)
 
     def save(self):
         with open('container.txt', 'w') as file:
@@ -85,8 +63,6 @@ class Container:
         else:
             if len(self.users):
                 self.current_user = random.choice(list(self.users))
-            else:
-                self.current_user = None
 
 
 

@@ -22,29 +22,32 @@ def main():
     main_menu()
 
     while True:
-        n = 0
         try:
             n = int(input('enter n: '))
         except Exception:
-            pass
+            print('wrong value, N has to be number')
+            continue
 
         if n == 0:
             print('thanks for using')
             break
         elif n == 1:
-            data = (input("enter data to add: ")).split(" ")
+            data = (input("enter data to add through whitespace: ")).split(" ")
             container.add(*data)
         elif n == 2:
             key = str(input("enter key to delete: "))
-            container.remove(key)
+            try:
+                container.remove(key)
+            except KeyError:
+                print('there is no such key in your collection')
         elif n == 3:
-            data = (input("enter data to add: ")).split(" ")
+            data = (input("enter data to add through whitespace: ")).split(" ")
             container.find(*data)
         elif n == 4:
             container.list()
         elif n == 5:
             regex = str(input("enter a regular exp: "))
-            print(container.grep(regex))
+            container.grep(regex)
         elif n == 6:
             container.save()
             print('data was saved')
