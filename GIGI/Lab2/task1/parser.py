@@ -1,4 +1,5 @@
 import re
+
 from expressions import *
 
 class Parser:
@@ -6,12 +7,20 @@ class Parser:
         self.text = text
 
     def count_sentences(self):
-        sentences = re.findall(exp_sentences, self.text)
-        return len(sentences)
+        sentences_amount = len(re.findall(exp_sentences, self.text))
+
+        for abbr in one_word_abbrs:
+            sentences_amount -= self.text.count(abbr)
+
+        for abbr in two_word_abbrs:
+            sentences_amount -= self.text.count(abbr)
+
+        return sentences_amount
 
     def count_non_declarative_sentences(self):
-        sentences = re.findall(exp_non_dec_sentences, self.text)
-        return len(sentences)
+        sentences_amount = len(re.findall(exp_non_dec_sentences, self.text))
+
+        return sentences_amount
 
     def count_words(self):
         return len(re.findall(exp_all_words, self.text)) - len(re.findall(exp_numbers, self.text))
@@ -58,7 +67,7 @@ class Parser:
 
         sorted_ngrams = sorted(counts.items(), key=lambda x: x[1], reverse=True)
 
-        return sorted_ngrams[0:k]
+        return sorted_ngrams[:k]
 
 
 

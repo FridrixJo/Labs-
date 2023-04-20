@@ -38,20 +38,17 @@ class Container:
                 print(i)
 
     def save(self):
-        with open('container.txt', 'w') as file:
-            for i in self.users:
-                file.write(f'{i} {" ".join(str(i) for i in self.storage[i])}\n')
+        with open(f'{self.current_user}.txt', 'w') as file:
+            file.write(f'{self.current_user} {" ".join(str(i) for i in self.storage[self.current_user])}\n')
 
 
     def load(self):
-        with open('container.txt', 'r') as file:
+        with open(f'{self.current_user}.txt', 'r') as file:
             temp_dict = {}
             for line in file:
                 data_arr = line.replace('\n', "").split(' ')
-                self.users.add(data_arr[0])
-                self.current_user = data_arr[0]
-                self.storage[data_arr[0]] = set(data_arr[1:])
-                temp_dict[data_arr[0]] = set(data_arr[1:])
+                self.storage[self.current_user] = set(data_arr[1:])
+                temp_dict[self.current_user] = set(data_arr[1:])
 
             return temp_dict
 
