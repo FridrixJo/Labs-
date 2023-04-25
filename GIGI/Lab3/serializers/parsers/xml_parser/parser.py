@@ -1,7 +1,7 @@
-from parsers.serializers.parser_interface import Parser
+from serializers.parsers.parser_interface import Parser
 
 
-class JSONParser(Parser):
+class XMLParser(Parser):
     def dump(self, obj, fp):
         pass
 

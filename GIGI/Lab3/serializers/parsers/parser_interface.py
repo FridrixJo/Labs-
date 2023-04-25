@@ -17,4 +17,3 @@ class Parser:
     @abstractmethod
     def loads(self, s):
         raise NotImplemented
-
