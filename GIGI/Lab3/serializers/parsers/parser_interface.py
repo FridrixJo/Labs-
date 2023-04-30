@@ -11,7 +11,7 @@ class Parser:
         raise NotImplemented
 
     @abstractmethod
-    def load(self, fp):
+    def load(self, s):
         raise NotImplemented
 
     @abstractmethod

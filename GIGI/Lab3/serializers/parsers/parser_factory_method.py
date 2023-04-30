@@ -4,8 +4,8 @@ from serializers.parsers.xml_parser.parser import XMLParser
 
 def create_parser(name):
     name.lower()
-    if name == 'json':
+    if name == "json":
         return JSONParser()
-    if name == 'xml':
+    if name == "xml":
         return XMLParser()
     raise Exception("There is no such parser")
