@@ -1,5 +1,7 @@
 from serializers.parsers.parser_factory_method import create_parser
-from serializers.serialization import serialize, deserialize
+from serializers.serialization import serialize
+from serializers.deserialization import deserialize
+
 
 
 class Serializer:

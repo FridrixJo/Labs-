@@ -1,314 +1,181 @@
 import re
 import inspect
 import types
-from constans import CODE_ATTRS, BASE_TYPE, BASE_COLLECTIONS
+
+from serializers.constants.object_constants import CODE_ATTRIBUTES, OBJECT_ATTRIBUTES, USELESS_FIELDS
 
 
-def serialize(obj) -> dict:
-    data = dict()
-    obj_type = type(obj)
-
-    if isinstance(obj, (list, tuple, set, frozenset, bytearray, bytes)):
-        data["type"] = get_base_type(obj_type)
-        data["value"] = [serialize(ser_obj) for ser_obj in obj]
-    elif isinstance(obj, dict):
-        data["type"] = get_base_type(obj_type)
-        data["value"] = [serialize([k, v]) for (k, v) in obj.items()]
-    elif isinstance(obj, (str, int, float, bool, complex)):
-        data["type"] = get_base_type(obj_type)
-        data["value"] = obj
-    elif inspect.isfunction(obj):
-        data["type"] = "function"
-        data["value"] = serialize_function(obj)
-    elif inspect.iscode(obj):
-        data["type"] = "code"
-        args = dict()
-        for k, v in inspect.getmembers(obj):
-            if k in CODE_ATTRS:
-                args[k] = serialize(v)
-        data["value"] = args
-    elif isinstance(obj, types.CellType):
-        data["type"] = "cell"
-        data["value"] = serialize(obj.cell_contents)
-    elif inspect.isclass(obj):
-        data["type"] = "class"
-        data["value"] = serialize_object(obj)
-    elif not obj:
-        data["type"] = "NoneType"
-        data["value"] = "Null"
-    else:
-        data["type"] = "object"
-        data["value"] = serialize_object(obj)
-
-    return data
+def get_base_type(object_type):
+    return re.search(r"\'([.\w]+)\'", str(object_type))[1]
 
 
-def get_base_type(obj_type):
-    return re.search(r"\'(\w+)\'", str(obj_type))[1]
+def serialize_function_type(func, class_obj=None):
 
-
-def serialize_function(func, cls=None):
     if not inspect.isfunction(func):
         return
 
-    ser_value_func = dict()
-    ser_value_func["__name__"] = func.__name__
-    ser_value_func["__globals__"] = get_globals(func, cls)
-
-    if func.__closure__:
-        ser_value_func["__closure__"] = serialize(func.__closure__)
-    else:
-        ser_value_func["__closure__"] = serialize(tuple())
+    result = dict()
 
     args = dict()
+    result['__name__'] = func.__name__
+    result["__globals__"] = get_global_vars(func, class_obj)
 
-    for k, v in inspect.getmembers(func.__code__):
-        if k in CODE_ATTRS:
-            args[k] = serialize(v)
+    if func.__closure__:
+        result['__closure__'] = serialize(func.__closure__)
+    else:
+        result['__closure__'] = serialize(tuple())
 
-    ser_value_func["__code__"] = args
+    for (key, value) in inspect.getmembers(func.__code__):
 
-    return ser_value_func
+        if key in CODE_ATTRIBUTES:
+            args[key] = serialize(value)
+
+    result['__code__'] = args
+
+    return result
 
 
-def get_globals(func, cls=None):
-    glob = dict()
+def get_global_vars(func, class_obj=None):
 
-    for glob_var in func.__code__.co_names:
-        if glob_var in func.__globals__:
-            if isinstance(func.__globals__[glob_var], types.ModuleType):
-                glob["module " + glob_var] = serialize(
-                    func.__globals__[glob_var].__name__
-                )
+    result = dict()
+    func_globals = func.__globals__
 
-            elif inspect.isclass(func.__globals__[glob_var]):
-                if (cls and func.__globals__[glob_var] != cls) or (not cls):
-                    glob[glob_var] = serialize(func.__globals__[glob_var])
+    for global_var in func.__code__.co_names:
 
-            elif glob_var != func.__code__.co_name:
-                glob[glob_var] = serialize(func.__globals__[glob_var])
+        if global_var in func_globals:
+
+            if isinstance(func_globals[global_var], types.ModuleType):
+                result["module " + global_var] = serialize(func_globals[global_var].__name__)
+
+            elif inspect.isclass(func_globals[global_var]):
+
+                if (class_obj and func.__globals__[global_var] != class_obj) or not class_obj:
+                    result[global_var] = serialize(func_globals[global_var])
+
+            elif global_var != func.__code__.co_name:
+                result[global_var] = serialize(func_globals[global_var])
 
             else:
-                glob[glob_var] = serialize(func.__name__)
+                result[global_var] = serialize(func.__name__)
 
-    return glob
+    return result
 
 
-def serialize_class(obj):
-    ser = dict()
-    ser["__name__"] = serialize(obj.__name__)
+def serialize_class_type(class_obj):
 
-    for mem in obj.__dict__:
-        member = [mem, obj.__dict__[mem]]
-        if member[0] in (
-            "__name__",
-            "__base__",
-            "__basicsize__",
-            "__dictoffset__",
-            "__class__",
-        ) or type(member[1]) in (
-            types.WrapperDescriptorType,
-            types.MethodDescriptorType,
-            types.BuiltinFunctionType,
-            types.GetSetDescriptorType,
-            types.MappingProxyType,
-        ):
+    result = dict()
+    # print('CLASS', class_obj.__name__, 'TYPE', type(class_obj.__name__))
+    result['__name__'] = serialize(class_obj.__name__)
+
+    for attribute_name in class_obj.__dict__:
+
+        attribute_value = class_obj.__dict__[attribute_name]
+
+        if attribute_name in OBJECT_ATTRIBUTES or type(attribute_value) in USELESS_FIELDS:
             continue
 
-        if member[0] == "ret_bob" and False:
-            print("\n\nBOB")
-            print(mem, obj.__dict__)
-            print(member[1], serialize_function(member[1].__func__, obj))
-        if isinstance(obj.__dict__[member[0]], staticmethod):
-            ser[member[0]] = {
-                "type": "staticmethod",
-                "value": {
-                    "type": "function",
-                    "value": serialize_function(member[1].__func__, obj),
-                },
-            }
-        elif isinstance(obj.__dict__[member[0]], classmethod):
-            ser[member[0]] = {
-                "type": "classmethod",
-                "value": {
-                    "type": "function",
-                    "value": serialize_function(member[1].__func__, obj),
-                },
-            }
-        elif inspect.ismethod(member[1]):
-            ser[member[0]] = serialize_function(member[1].__func__, obj)
+        if isinstance(class_obj.__dict__[attribute_name], (staticmethod, classmethod)):
 
-        elif inspect.isfunction(member[1]):
-            ser[member[0]] = {"type": "function", "value": serialize_function(member[1], obj)}
+            if isinstance(class_obj.__dict__[attribute_name], staticmethod):
+                ser_type = "staticmethod"
+            else:
+                ser_type = "classmethod"
+
+            result[attribute_name] = \
+                {
+                    "type": ser_type,
+                    "value": {
+                        "type": "function",
+                        "value": serialize_function_type(attribute_value.__func__, class_obj)
+                    }
+                }
+
+        elif inspect.ismethod(attribute_value):
+            result[attribute_name] = serialize_function_type(attribute_value.__func__, class_obj)
+
+        elif inspect.isfunction(attribute_value):
+            result[attribute_name] = \
+                {
+                    "type": "function",
+                    "value": serialize_function_type(attribute_value, class_obj)
+                }
+
         else:
-            ser[member[0]] = serialize(member[1])
-    ser["__bases__"] = {
-        "type": "tuple",
-        "value": [serialize(base) for base in obj.__bases__ if base != object],
-    }
-    return ser
+            result[attribute_name] = serialize(attribute_value)
+
+    result["__bases__"] = \
+        {
+            "type": "tuple",
+            "value": [serialize(base) for base in class_obj.__bases__ if base != object]
+        }
+
+    return result
 
 
-def serialize_object(obj):
-    ser = dict()
-    ser["__class__"] = serialize(obj.__class__)
+def serialize_object_type(obj):
+
+    result = dict()
+    result["__class__"] = serialize(obj.__class__)
+
     members = dict()
 
-    for k, v in inspect.getmembers(obj):
-        if k.startswith("__") or inspect.isfunction(v) or inspect.ismethod(v):
-            continue
-        members[k] = serialize(v)
+    for (key, value) in inspect.getmembers(obj):
 
-    ser["__members__"] = members
+        if not key.startswith("__") and not inspect.isfunction(value) and not inspect.ismethod(value):
+            members[key] = serialize(value)
 
-    return ser
+    result["__members__"] = members
 
-
-def deserialize(obj: dict):
-    # print(obj, type(obj))
-    if obj["type"] in BASE_TYPE:
-        return generator_type(obj["type"], obj["value"])
-
-    elif obj["type"] in BASE_COLLECTIONS:
-        return gener_collection(obj["type"], obj["value"])
-
-    elif obj["type"] == "dict":
-        return dict(gener_collection("list", obj["value"]))
-
-    elif obj["type"] == "function":
-        return deserialize_function(obj["value"])
-
-    elif obj["type"] == "code":
-        code = obj["value"]
-        return types.CodeType(
-            deserialize(code["co_argcount"]),
-            deserialize(code["co_posonlyargcount"]),
-            deserialize(code["co_kwonlyargcount"]),
-            deserialize(code["co_nlocals"]),
-            deserialize(code["co_stacksize"]),
-            deserialize(code["co_flags"]),
-            deserialize(code["co_code"]),
-            deserialize(code["co_consts"]),
-            deserialize(code["co_names"]),
-            deserialize(code["co_varnames"]),
-            deserialize(code["co_filename"]),
-            deserialize(code["co_name"]),
-            deserialize(code["co_firstlineno"]),
-            deserialize(code["co_lnotab"]),
-            deserialize(code["co_freevars"]),
-            deserialize(code["co_cellvars"]),
-        )
-
-    elif obj["type"] == "cell":
-        return types.CellType(deserialize(obj["value"]))
-
-    elif obj["type"] == "class":
-        return deserialize_class(obj["value"])
-
-    elif obj["type"] == "staticmethod":
-        return staticmethod(deserialize(obj["value"]))
-
-    elif obj["type"] == "classmethod":
-        return classmethod(deserialize(obj["value"]))
-
-    elif obj["type"] == "object":
-        return deserialize_object(obj["value"])
+    return result
 
 
-def generator_type(_type, obj):
-    if _type == "int":
-        return int(obj)
-    elif _type == "float":
-        return float(obj)
-    elif _type == "complex":
-        return complex(obj)
-    elif _type == "str":
-        return str(obj)
-    elif _type == "bool":
-        return bool(obj)
+def serialize(obj):
+
+    result = dict()
+    base_object_type = get_base_type(type(obj))
+
+    if isinstance(obj, (str, int, float, bool, complex)):
+        result["type"] = base_object_type
+        result["value"] = obj
+
+    elif isinstance(obj, (list, tuple, set, frozenset, bytearray, bytes)):
+        result["type"] = base_object_type
+        result["value"] = [serialize(enclosed_obj) for enclosed_obj in obj]
+
+    elif isinstance(obj, dict):
+        result["type"] = base_object_type
+        result["value"] = [serialize([key, value]) for (key, value) in obj.items()]
+
+    elif isinstance(obj, types.CellType):
+        result["type"] = "cell"
+        result["value"] = serialize(obj.cell_contents)
+
+    elif inspect.isfunction(obj):
+        result["type"] = "function"
+        result["value"] = serialize_function_type(obj)
+
+    elif inspect.isclass(obj):
+        result["type"] = "class"
+        result["value"] = serialize_class_type(obj)
+
+    elif inspect.iscode(obj):
+        result["type"] = "code"
+        args = dict()
+
+        for (key, value) in inspect.getmembers(obj):
+            if key in CODE_ATTRIBUTES:
+                args[key] = serialize(value)
+
+        result["value"] = args
+
+    elif not obj:
+        result["type"] = "NoneType"
+        result["value"] = "Null"
+
+    else:
+        result["type"] = "object"
+        result["value"] = serialize_object_type(obj)
+
+    return result
 
 
-def gener_collection(_type, obj):
-    if _type == "list":
-        return list(deserialize(o) for o in obj)
-    elif _type == "tuple":
-        return tuple(deserialize(o) for o in obj)
-    elif _type == "set":
-        return set(deserialize(o) for o in obj)
-    elif _type == "frozenset":
-        return frozenset(deserialize(o) for o in obj)
-    elif _type == "bytearray":
-        return bytearray(deserialize(o) for o in obj)
-    elif _type == "bytes":
-        return bytes(deserialize(o) for o in obj)
-
-
-def deserialize_function(obj):
-    # print(obj)
-    code = obj["__code__"]
-    globs = obj["__globals__"]
-    closures = obj["__closure__"]
-    res_globs = dict()
-
-    for k in obj["__globals__"]:
-        if "module" in k:
-            res_globs[globs[k]["value"]] = __import__(globs[k]["value"])
-
-        elif globs[k] != obj["__name__"]:
-            res_globs[k] = deserialize(globs[k])
-
-    closure = tuple(deserialize(closures))
-
-    codeType = types.CodeType(
-        deserialize(code["co_argcount"]),
-        deserialize(code["co_posonlyargcount"]),
-        deserialize(code["co_kwonlyargcount"]),
-        deserialize(code["co_nlocals"]),
-        deserialize(code["co_stacksize"]),
-        deserialize(code["co_flags"]),
-        deserialize(code["co_code"]),
-        deserialize(code["co_consts"]),
-        deserialize(code["co_names"]),
-        deserialize(code["co_varnames"]),
-        deserialize(code["co_filename"]),
-        deserialize(code["co_name"]),
-        deserialize(code["co_firstlineno"]),
-        deserialize(code["co_lnotab"]),
-        deserialize(code["co_freevars"]),
-        deserialize(code["co_cellvars"]),
-    )
-
-    funcRes = types.FunctionType(code=codeType, globals=res_globs, closure=closure)
-    funcRes.__globals__.update({funcRes.__name__: funcRes})
-
-    return funcRes
-
-
-def deserialize_class(obj):
-    bases = deserialize(obj["__bases__"])
-    members = dict()
-
-    for member, value in obj.items():
-        members[member] = deserialize(value)
-
-    clas = type(deserialize(obj["__name__"]), bases, members)
-
-    for k, member in members.items():
-        if inspect.isfunction(member):
-            member.__globals__.update({clas.__name__: clas})
-        elif isinstance(member, (staticmethod, classmethod)):
-            member.__func__.__globals__.update({clas.__name__: clas})
-    return clas
-
-
-def deserialize_object(obj):
-    clas = deserialize(obj["__class__"])
-    members = dict()
-
-    for k, v in obj["__members__"].items():
-        members[k] = deserialize(v)
-
-    res = object.__new__(clas)
-    res.__dict__ = members
-
-    return res
