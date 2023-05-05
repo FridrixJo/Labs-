@@ -2,7 +2,11 @@ import re
 import inspect
 import types
 
-from serializers.constants.object_constants import CODE_ATTRIBUTES, OBJECT_ATTRIBUTES, USELESS_FIELDS
+from serializers.constants.object_constants import (
+    CODE_ATTRIBUTES,
+    OBJECT_ATTRIBUTES,
+    USELESS_FIELDS,
+)
 
 
 def get_base_type(object_type):
@@ -10,46 +14,44 @@ def get_base_type(object_type):
 
 
 def serialize_function_type(func, class_obj=None):
-
     if not inspect.isfunction(func):
         return
 
     result = dict()
 
     args = dict()
-    result['__name__'] = func.__name__
+    result["__name__"] = func.__name__
     result["__globals__"] = get_global_vars(func, class_obj)
 
     if func.__closure__:
-        result['__closure__'] = serialize(func.__closure__)
+        result["__closure__"] = serialize(func.__closure__)
     else:
-        result['__closure__'] = serialize(tuple())
+        result["__closure__"] = serialize(tuple())
 
-    for (key, value) in inspect.getmembers(func.__code__):
-
+    for key, value in inspect.getmembers(func.__code__):
         if key in CODE_ATTRIBUTES:
             args[key] = serialize(value)
 
-    result['__code__'] = args
+    result["__code__"] = args
 
     return result
 
 
 def get_global_vars(func, class_obj=None):
-
     result = dict()
     func_globals = func.__globals__
 
     for global_var in func.__code__.co_names:
-
         if global_var in func_globals:
-
             if isinstance(func_globals[global_var], types.ModuleType):
-                result["module " + global_var] = serialize(func_globals[global_var].__name__)
+                result["module " + global_var] = serialize(
+                    func_globals[global_var].__name__
+                )
 
             elif inspect.isclass(func_globals[global_var]):
-
-                if (class_obj and func.__globals__[global_var] != class_obj) or not class_obj:
+                if (
+                    class_obj and func.__globals__[global_var] != class_obj
+                ) or not class_obj:
                     result[global_var] = serialize(func_globals[global_var])
 
             elif global_var != func.__code__.co_name:
@@ -62,66 +64,69 @@ def get_global_vars(func, class_obj=None):
 
 
 def serialize_class_type(class_obj):
-
     result = dict()
     # print('CLASS', class_obj.__name__, 'TYPE', type(class_obj.__name__))
-    result['__name__'] = serialize(class_obj.__name__)
+    result["__name__"] = serialize(class_obj.__name__)
 
     for attribute_name in class_obj.__dict__:
-
         attribute_value = class_obj.__dict__[attribute_name]
 
-        if attribute_name in OBJECT_ATTRIBUTES or type(attribute_value) in USELESS_FIELDS:
+        if (
+            attribute_name in OBJECT_ATTRIBUTES
+            or type(attribute_value) in USELESS_FIELDS
+        ):
             continue
 
         if isinstance(class_obj.__dict__[attribute_name], (staticmethod, classmethod)):
-
             if isinstance(class_obj.__dict__[attribute_name], staticmethod):
                 ser_type = "staticmethod"
             else:
                 ser_type = "classmethod"
 
-            result[attribute_name] = \
-                {
-                    "type": ser_type,
-                    "value": {
-                        "type": "function",
-                        "value": serialize_function_type(attribute_value.__func__, class_obj)
-                    }
-                }
+            result[attribute_name] = {
+                "type": ser_type,
+                "value": {
+                    "type": "function",
+                    "value": serialize_function_type(
+                        attribute_value.__func__, class_obj
+                    ),
+                },
+            }
 
         elif inspect.ismethod(attribute_value):
-            result[attribute_name] = serialize_function_type(attribute_value.__func__, class_obj)
+            result[attribute_name] = serialize_function_type(
+                attribute_value.__func__, class_obj
+            )
 
         elif inspect.isfunction(attribute_value):
-            result[attribute_name] = \
-                {
-                    "type": "function",
-                    "value": serialize_function_type(attribute_value, class_obj)
-                }
+            result[attribute_name] = {
+                "type": "function",
+                "value": serialize_function_type(attribute_value, class_obj),
+            }
 
         else:
             result[attribute_name] = serialize(attribute_value)
 
-    result["__bases__"] = \
-        {
-            "type": "tuple",
-            "value": [serialize(base) for base in class_obj.__bases__ if base != object]
-        }
+    result["__bases__"] = {
+        "type": "tuple",
+        "value": [serialize(base) for base in class_obj.__bases__ if base != object],
+    }
 
     return result
 
 
 def serialize_object_type(obj):
-
     result = dict()
     result["__class__"] = serialize(obj.__class__)
 
     members = dict()
 
-    for (key, value) in inspect.getmembers(obj):
-
-        if not key.startswith("__") and not inspect.isfunction(value) and not inspect.ismethod(value):
+    for key, value in inspect.getmembers(obj):
+        if (
+            not key.startswith("__")
+            and not inspect.isfunction(value)
+            and not inspect.ismethod(value)
+        ):
             members[key] = serialize(value)
 
     result["__members__"] = members
@@ -130,7 +135,6 @@ def serialize_object_type(obj):
 
 
 def serialize(obj):
-
     result = dict()
     base_object_type = get_base_type(type(obj))
 
@@ -162,7 +166,7 @@ def serialize(obj):
         result["type"] = "code"
         args = dict()
 
-        for (key, value) in inspect.getmembers(obj):
+        for key, value in inspect.getmembers(obj):
             if key in CODE_ATTRIBUTES:
                 args[key] = serialize(value)
 
@@ -177,5 +181,3 @@ def serialize(obj):
         result["value"] = serialize_object_type(obj)
 
     return result
-
-

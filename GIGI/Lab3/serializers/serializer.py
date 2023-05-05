@@ -3,7 +3,6 @@ from serializers.serialization import serialize
 from serializers.deserialization import deserialize
 
 
-
 class Serializer:
     def __init__(self, parser_name):
         self.parser = create_parser(parser_name)

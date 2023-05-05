@@ -1,11 +1,14 @@
 import types
 import inspect
 
-from serializers.constants.object_constants import BASE_TYPES, BASE_COLLECTIONS,CODE_ATTRIBUTES
+from serializers.constants.object_constants import (
+    BASE_TYPES,
+    BASE_COLLECTIONS,
+    CODE_ATTRIBUTES,
+)
 
 
 def deserialize_base_type(obj_type, obj):
-
     if obj_type == "int":
         return int(obj)
     elif obj_type == "float":
@@ -19,7 +22,6 @@ def deserialize_base_type(obj_type, obj):
 
 
 def deserialize_base_collection(obj_type, obj):
-
     if obj_type == "list":
         return list(deserialize(element) for element in obj)
     elif obj_type == "tuple":
@@ -35,7 +37,6 @@ def deserialize_base_collection(obj_type, obj):
 
 
 def deserialize_class(class_obj):
-
     bases = deserialize(class_obj["__bases__"])
     items = dict()
 
@@ -45,7 +46,6 @@ def deserialize_class(class_obj):
     cls = type(deserialize(class_obj["__name__"]), bases, items)
 
     for item in items.values():
-
         if inspect.isfunction(item):
             item.__globals__.update({cls.__name__: cls})
 
@@ -56,7 +56,6 @@ def deserialize_class(class_obj):
 
 
 def deserialize_object(obj):
-
     cls = deserialize(obj["__class__"])
     items = dict()
 
@@ -70,22 +69,24 @@ def deserialize_object(obj):
 
 
 def deserialize_function(func_obj):
-
     code = func_obj["__code__"]
     func_globals = func_obj["__globals__"]
     closures = func_obj["__closure__"]
     final_globals = dict()
 
     for key in func_globals:
-
         if "module" in key:
-            final_globals[func_globals[key]["value"]] = __import__(func_globals[key]["value"])
+            final_globals[func_globals[key]["value"]] = __import__(
+                func_globals[key]["value"]
+            )
 
         elif func_globals[key] != func_obj["__name__"]:
             final_globals[key] = deserialize(func_globals[key])
 
     closures = tuple(deserialize(closures))
-    code = types.CodeType(*tuple(deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES))
+    code = types.CodeType(
+        *tuple(deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES)
+    )
 
     res = types.FunctionType(code=code, globals=final_globals, closure=closures)
     res.__globals__.update({res.__name__: res})
@@ -94,7 +95,6 @@ def deserialize_function(func_obj):
 
 
 def deserialize(obj):
-
     if obj["type"] in BASE_TYPES:
         return deserialize_base_type(obj["type"], obj["value"])
 
@@ -106,7 +106,9 @@ def deserialize(obj):
 
     elif obj["type"] == "code":
         code = obj["value"]
-        return types.CodeType(*tuple(deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES))
+        return types.CodeType(
+            *tuple(deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES)
+        )
 
     elif obj["type"] == "function":
         return deserialize_function(obj["value"])
