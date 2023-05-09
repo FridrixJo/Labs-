@@ -15,7 +15,6 @@ class A:
 
 
 class B:
-
     @staticmethod
     def get_cos(v):
         return math.cos(v + i)
@@ -28,10 +27,12 @@ class C(A, B):
 def test_func(a):
     return math.sin(a - i)
 
+
 def dec(func):
     def wrapper(*args, **kwargs):
-        print('start func')
+        print("start func")
         res = func(*args, **kwargs)
-        print('end func')
+        print("end func")
         return res
+
     return wrapper

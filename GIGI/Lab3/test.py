@@ -1,5 +1,3 @@
-from serializers.serializer import Serializer
-
 import math
 
 x = 10

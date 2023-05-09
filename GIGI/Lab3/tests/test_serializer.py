@@ -5,9 +5,15 @@ from tests.testing_data import A, C, test_func, dec
 
 
 class SerializerTests(unittest.TestCase):
-
     def setUp(self):
-        self.serializer = Serializer(random.choice(("json", "xml",)))
+        self.serializer = Serializer(
+            random.choice(
+                (
+                    "json",
+                    "xml",
+                )
+            )
+        )
 
     def test_int(self):
         ser = self.serializer.dumps(10)
