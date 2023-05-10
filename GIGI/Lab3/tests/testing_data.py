@@ -3,24 +3,24 @@ import math
 i = 2
 
 
-class A:
-    a = 1
+class Block:
+    width = 19
 
     @staticmethod
-    def get_arg():
-        return A.a
+    def get_width():
+        return Block.width
 
-    def test_method(self):
-        return self.a / 2
+    def get_volume(self):
+        return self.width * 3
 
 
-class B:
+class Calc:
     @staticmethod
     def get_cos(v):
         return math.cos(v + i)
 
 
-class C(A, B):
+class C(Block, Calc):
     pass
 
 
@@ -28,7 +28,7 @@ def test_func(a):
     return math.sin(a - i)
 
 
-def dec(func):
+def decorated_func(func):
     def wrapper(*args, **kwargs):
         print("start func")
         res = func(*args, **kwargs)

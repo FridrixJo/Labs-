@@ -61,11 +61,14 @@ def func():
     return 1 + 1
 
 
-with open("file2.xml", "w") as file:
+file_path = 'file.json'
+
+
+with open(file_path, "w") as file:
     a.dump(C, file)
 
 
-with open("file2.xml", "r") as file:
+with open(file_path, "r") as file:
     obj = a.load(file)
     print(obj)
     print(obj.__dict__)

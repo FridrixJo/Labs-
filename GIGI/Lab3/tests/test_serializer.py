@@ -1,7 +1,7 @@
 import random
 import unittest
 from serializers.serializer import Serializer
-from tests.testing_data import A, C, test_func, dec
+from tests.testing_data import Block, C, test_func, decorated_func
 
 
 class SerializerTests(unittest.TestCase):
@@ -86,18 +86,18 @@ class SerializerTests(unittest.TestCase):
         ser = self.serializer.dumps(obj)
         des = self.serializer.loads(ser)
 
-        self.assertEqual(obj.test_method(), des.test_method())
+        self.assertEqual(obj.get_volume(), des.get_volume())
 
     def test_staticmethod(self):
-        ser = self.serializer.dumps(A)
+        ser = self.serializer.dumps(Block)
         des = self.serializer.loads(ser)
 
-        self.assertEqual(A.get_arg(), des.get_a())
+        self.assertEqual(Block.get_width(), des.get_width())
 
     def test_decorator(self):
-        dec_func = dec(test_func)
+        dec_func = decorated_func(test_func)
 
-        ser = self.serializer.dumps(dec)
+        ser = self.serializer.dumps(decorated_func)
         des = self.serializer.loads(ser)
 
         des_func = des(test_func)
