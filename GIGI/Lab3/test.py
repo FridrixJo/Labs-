@@ -1,5 +1,7 @@
 import math
 
+from serializers.serializer import Serializer
+
 x = 10
 
 
@@ -59,11 +61,11 @@ def func():
     return 1 + 1
 
 
-with open("file.xml", "w") as file:
+with open("file2.xml", "w") as file:
     a.dump(C, file)
 
 
-with open("file.xml", "r") as file:
+with open("file2.xml", "r") as file:
     obj = a.load(file)
     print(obj)
     print(obj.__dict__)
